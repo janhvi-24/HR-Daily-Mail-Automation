@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Daily HR Update</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c1f24; --muted:#6b7280; --line:#e5e7eb; --accent:#2563eb; --accent-soft:#eff4ff;
+          --ok:#15803d; --warn:#b45309; --bad:#b91c1c; --chip:#eef2ff; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1115; --card:#181b21; --text:#e6e8eb; --muted:#9aa1ab; --line:#2a2f37; --accent:#60a5fa; --accent-soft:#1a2436;
+            --ok:#4ade80; --warn:#fbbf24; --bad:#f87171; --chip:#1f2937; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 13px; margin: 0 0 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  h3 { font-size: 16px; margin: 0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  .row { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  dl { display:grid; grid-template-columns: 110px 1fr; gap:4px 12px; margin:12px 0 0; }
+  dt { color:var(--muted); } dd { margin:0; word-break: break-word; }
+  .buttons { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; align-items:center; }
+  button { font:inherit; padding:7px 13px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.danger { color:var(--bad); }
+  button:disabled { opacity:.5; cursor:wait; }
+  button.link { border:none; background:none; color:var(--muted); padding:0; font-size:13px; }
+  .chip { display:inline-block; font-size:12px; padding:1px 8px; border-radius:99px; background:var(--chip); color:var(--muted); margin-left:6px; vertical-align:middle; }
+  .SENT, .UPDATED, .READY, .ok { color:var(--ok); font-weight:600; }
+  .MISSING, .INCOMPLETE, .SENDING { color:var(--warn); font-weight:600; }
+  .ERROR, .bad { color:var(--bad); font-weight:600; }
+  .msg { margin-top:10px; min-height:1.2em; }
+  pre { white-space:pre-wrap; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px; margin:12px 0 0; font:14px/1.5 ui-monospace, Menlo, monospace; }
+  .table { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; white-space:nowrap; }
+  label { display:block; font-size:13px; color:var(--muted); margin-bottom:4px; }
+  input, select { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--text); width:100%; }
+  input[readonly] { opacity:.75; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+  .grid .full { grid-column: 1 / -1; }
+  fieldset { border:1px solid var(--line); border-radius:10px; padding:12px 14px 14px; margin:0 0 14px; }
+  legend { font-weight:600; padding:0 6px; }
+  .providers { display:grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap:8px; margin:6px 0 4px; }
+  .providers button { text-align:left; padding:10px 12px; line-height:1.3; }
+  .providers button small { display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+  .providers button.selected { border-color:var(--accent); background:var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .connect { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:12px; padding:12px; border-radius:8px; background:var(--bg); border:1px dashed var(--line); }
+  .days { display:flex; flex-wrap:wrap; gap:6px 14px; }
+  .days label { display:flex; gap:6px; align-items:center; color:var(--text); font-size:14px; margin:0; }
+  .days input, .check input { width:auto; }
+  .check { display:flex; gap:8px; align-items:center; color:var(--text); font-size:14px; }
+  .hint { color:var(--muted); font-size:13px; margin:6px 0 0; }
+  code { background:var(--bg); border:1px solid var(--line); padding:1px 5px; border-radius:5px; font-size:13px; word-break:break-all; }
+  details summary { cursor:pointer; color:var(--muted); margin:10px 0; }
+  .empty { color:var(--muted); text-align:center; padding:24px 8px; }
+  [hidden] { display:none !important; }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } dl { grid-template-columns: 95px 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Daily HR Update</h1>
+    <button id="logout" class="link" hidden>Log out</button>
+  </header>
+
+  <div id="fatal" class="card ERROR" hidden></div>
+
+  <section id="login" class="card" hidden>
+    <h2>Sign in</h2>
+    <form id="loginForm">
+      <input id="password" type="password" placeholder="Admin password" autocomplete="current-password" required style="max-width:280px">
+      <div class="buttons"><button class="primary" type="submit">Sign in</button></div>
+      <div id="loginError" class="msg ERROR"></div>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+    <div class="row" style="margin-bottom:12px">
+      <div id="todayLine" class="hint" style="margin:0"></div>
+      <button id="addBtn" class="primary">+ Connect mail account</button>
+    </div>
+
+    <!-- Account form (add / edit) -->
+    <section id="formCard" class="card" hidden>
+      <h2 id="formTitle">Connect mail account</h2>
+      <form id="accountForm" autocomplete="off" novalidate>
+        <fieldset>
+          <legend>1 · Mailbox</legend>
+          <label for="f-senderEmail">Email address</label>
+          <input id="f-senderEmail" type="email" placeholder="you@company.com">
+          <p id="detectHint" class="hint"></p>
+
+          <label style="margin-top:12px">Provider</label>
+          <div id="providerGrid" class="providers"></div>
+          <p id="providerHint" class="hint"></p>
+
+          <!-- Google / Microsoft -->
+          <div id="oauthBox" class="connect" hidden>
+            <button type="button" id="signInBtn" class="primary"></button>
+            <span id="oauthStatus"></span>
+          </div>
+          <p id="oauthMissing" class="hint bad" hidden></p>
+
+          <!-- Password-based providers -->
+          <div id="smtpBox" hidden>
+            <div class="grid" style="margin-top:12px">
+              <div class="full"><label for="f-password">Mailbox password</label><input id="f-password" type="password" autocomplete="new-password"></div>
+            </div>
+            <details id="serverDetails">
+              <summary>Server settings</summary>
+              <div class="grid">
+                <div><label for="f-smtpHost">SMTP server</label><input id="f-smtpHost"></div>
+                <div><label for="f-smtpPort">Port</label><input id="f-smtpPort" type="number" min="1" max="65535"></div>
+                <div class="full"><label for="f-smtpUser">Username <span class="hint">(blank = email address)</span></label><input id="f-smtpUser"></div>
+              </div>
+            </details>
+          </div>
+
+          <div style="margin-top:12px"><label for="f-senderName">Your name (used to sign the email)</label><input id="f-senderName" maxlength="100"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>2 · Recipient</legend>
+          <div class="grid">
+            <div><label for="f-hrEmail">HR email</label><input id="f-hrEmail" type="email"></div>
+            <div><label for="f-hrName">HR name <span class="hint">("Hi …," · optional)</span></label><input id="f-hrName" maxlength="100"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>3 · Work log</legend>
+          <div class="grid">
+            <div class="full"><label for="f-sheetId">Google Sheet link</label><input id="f-sheetId" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></div>
+            <div><label for="f-sheetName">Tab name</label><input id="f-sheetName" placeholder="Sheet1"></div>
+            <div><label>Send on</label><div class="days" id="f-days"></div></div>
+          </div>
+          <p class="hint" id="shareHint"></p>
+          <details>
+            <summary>Advanced: column names &amp; date format</summary>
+            <div class="grid">
+              <div><label for="f-colDate">Date column</label><input id="f-colDate" placeholder="Date"></div>
+              <div><label for="f-colTasks">Tasks column</label><input id="f-colTasks" placeholder="Tasks / Activities"></div>
+              <div><label for="f-colStatus">Status column</label><input id="f-colStatus" placeholder="Status"></div>
+              <div><label for="f-colNotes">Notes column</label><input id="f-colNotes" placeholder="Additional Notes"></div>
+              <div><label for="f-dateOrder">Typed dates like 03/04/2026 mean</label>
+                <select id="f-dateOrder"><option value="DMY">Day / Month / Year</option><option value="MDY">Month / Day / Year</option></select></div>
+              <div><label for="f-label">Display name</label><input id="f-label" maxlength="80" placeholder="(defaults to email)"></div>
+            </div>
+          </details>
+        </fieldset>
+
+        <label class="check"><input type="checkbox" id="f-enabled" checked> Automation on (send automatically every working day)</label>
+
+        <div class="buttons">
+          <button type="button" id="testBtn">Test connection</button>
+          <button type="button" id="testSendBtn">Send test email to me</button>
+          <button type="submit" class="primary">Save</button>
+          <button type="button" id="cancelBtn">Cancel</button>
+          <button type="button" id="deleteBtn" class="danger" hidden>Remove account</button>
+        </div>
+        <div id="formMsg" class="msg"></div>
+      </form>
+    </section>
+
+    <div id="accounts"></div>
+
+    <section class="card">
+      <h2>History</h2>
+      <div class="table"><table><thead><tr><th>Date</th><th>Account</th><th>Sheet</th><th>Email</th><th>Sent at</th><th>Detail</th></tr></thead><tbody id="history"></tbody></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Log</h2>
+      <div class="table"><table><thead><tr><th>Time</th><th>Account</th><th>Event</th><th>Result</th><th>Detail</th></tr></thead><tbody id="logs"></tbody></table></div>
+    </section>
+
+    <p class="hint" id="footer"></p>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const F = (name) => $(`f-${name}`);
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const KIND_LABEL = { google: 'Google', microsoft: 'Microsoft' };
+const sheetLabel = { UPDATED: 'Updated', MISSING: 'Not updated', INCOMPLETE: 'Incomplete', ERROR: 'Error' };
+const emailLabel = (s) => ({ SENT: 'Sent', SENDING: 'Sending / unconfirmed', ERROR: 'Error' }[s] || 'Not sent');
+const emailClass = (s) => (['SENT', 'ERROR', 'SENDING'].includes(s) ? s : '');
+
+let state = { accounts: [], tz: 'Asia/Kolkata', config: { providers: [], oauth: {} } };
+// Form state: which provider card is selected, and the sealed sign-in result (OAuth only).
+let form = { id: null, preset: 'hostinger', connection: null, connectedEmail: null, userPicked: false };
+
+// ---------- helpers ----------
+const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text ?? '—'; if (cls) e.className = cls; return e; };
+const time = (iso) => iso ? new Date(iso).toLocaleTimeString('en-IN', { timeZone: state.tz, hour: 'numeric', minute: '2-digit' }) : '—';
+const dateTime = (iso) => new Date(iso).toLocaleString('en-IN', { timeZone: state.tz, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const shortDate = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
+const accountName = (id) => state.accounts.find((a) => a.id === id)?.label ?? `#${id} (removed)`;
+const preset = (id) => state.config.providers.find((p) => p.id === id);
+function presetFor(a) {
+  if (a.provider !== 'smtp') return a.provider;
+  return state.config.providers.find((p) => p.kind === 'smtp' && p.host === a.smtpHost)?.id || 'custom';
+}
+function row(cells) { const tr = document.createElement('tr'); cells.forEach(([t, c]) => tr.append(el('td', t, c))); return tr; }
+
+async function api(path, options = {}) {
+  const res = await fetch(path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...options });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401 && path !== '/api/login') { showLogin(); throw new Error('Please sign in'); }
+  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+  return body;
+}
+const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body) });
+function busy(on) { document.querySelectorAll('button').forEach((b) => (b.disabled = on)); }
+function showLogin() { $('login').hidden = false; $('app').hidden = true; $('logout').hidden = true; }
+
+// ---------- dashboard ----------
+async function load() {
+  const data = await api('/api/status');
+  state = { ...data, tz: data.config.timezone };
+  $('login').hidden = true; $('app').hidden = false; $('logout').hidden = false; $('fatal').hidden = true;
+  $('todayLine').textContent = `Today: ${data.today.dateLong} (${data.today.weekdayName})`;
+  $('footer').textContent = `Timezone ${data.config.timezone} · AI model ${data.config.aiModel} · Scheduled run ≈ 10:30 IST (see vercel.json)`;
+  renderAccounts();
+  $('history').replaceChildren(...data.history.map((d) => row([
+    [shortDate(d.date)], [accountName(d.account_id)], [sheetLabel[d.sheet_status] || '—', d.sheet_status],
+    [emailLabel(d.status), emailClass(d.status)], [time(d.email_sent_at)], [d.detail],
+  ])));
+  $('logs').replaceChildren(...data.logs.map((l) => row([[dateTime(l.at)], [accountName(l.account_id)], [l.event], [l.result, l.result], [l.detail]])));
+}
+
+function renderAccounts() {
+  const box = $('accounts');
+  if (!state.accounts.length) {
+    const c = el('section', undefined, 'card empty');
+    c.append(el('p', 'No mail accounts connected yet.'), el('p', 'Click “Connect mail account” to add Gmail, Outlook, Hostinger or any other mailbox.'));
+    box.replaceChildren(c);
+    return;
+  }
+  box.replaceChildren(...state.accounts.map(accountCard));
+}
+
+function accountCard(a) {
+  const today = state.history.find((d) => d.account_id === a.id && d.date === state.today.date);
+  const card = el('section', undefined, 'card');
+  const head = el('div', undefined, 'row');
+  const title = el('h3', a.label);
+  title.append(el('span', a.enabled ? 'Automation on' : 'Paused', 'chip'));
+  const edit = el('button', 'Edit', 'link');
+  edit.addEventListener('click', () => openForm(a));
+  head.append(title, edit);
+
+  const dl = el('dl');
+  const working = a.workingDays.includes(state.today.weekday);
+  const via = a.provider === 'smtp' ? `${preset(presetFor(a))?.name ?? 'SMTP'} (${a.smtpHost})` : `${preset(a.provider).name} sign-in`;
+  const pairs = [
+    ['Mailbox', `${a.senderEmail} · ${via}`],
+    ['Sends to', a.hrEmail],
+    ['Send on', a.workingDays.map((d) => DAY_NAMES[d]).join(', ') || 'No days selected'],
+    ['Sheet', today?.sheet_status ? sheetLabel[today.sheet_status] : (working ? 'Not checked yet' : 'Not a working day'), today?.sheet_status],
+    ['Email', emailLabel(today?.status), emailClass(today?.status)],
+    ['Sent at', time(today?.email_sent_at)],
+  ];
+  if (today?.detail) pairs.push(['Detail', today.detail]);
+  for (const [k, v, c] of pairs) dl.append(el('dt', k), el('dd', v, c));
+
+  const msg = el('div', '', 'msg');
+  const pre = el('pre'); pre.hidden = true;
+  if (today?.status === 'SENT' && today.email_body) { pre.textContent = `Subject: ${today.email_subject}\n\n${today.email_body}`; pre.hidden = false; }
+
+  const buttons = el('div', undefined, 'buttons');
+  for (const [action, label, cls] of [['check', 'Check Now'], ['preview', 'Generate Preview'], ['send', 'Send Now', 'primary']]) {
+    const b = el('button', label, cls);
+    b.addEventListener('click', () => runAction(a, action, msg));
+    buttons.append(b);
+  }
+  const refresh = el('button', 'Refresh Status');
+  refresh.addEventListener('click', () => load().catch((e) => { msg.textContent = e.message; msg.className = 'msg ERROR'; }));
+  buttons.append(refresh);
+  if (/reconnect/i.test(today?.detail || '')) {
+    const re = el('button', `Reconnect ${KIND_LABEL[a.provider] || ''}`.trim());
+    re.addEventListener('click', () => { openForm(a); signIn(); });
+    buttons.append(re);
+  }
+
+  card.append(head, dl, buttons, msg, pre);
+  card.dataset.id = a.id;
+  return card;
+}
+
+async function runAction(account, action, msg) {
+  if (action === 'send' && !confirm(`Send today's update from ${account.senderEmail} to ${account.hrEmail} now?`)) return;
+  busy(true); msg.textContent = 'Working…'; msg.className = 'msg';
+  try {
+    const r = await post('/api/run', { accountId: account.id, action });
+    await load();
+    const card = $('accounts').querySelector(`[data-id="${account.id}"]`);
+    const [m, p] = [card.querySelector('.msg'), card.querySelector('pre')];
+    m.textContent = r.message; m.className = `msg ${r.outcome === 'ERROR' ? 'ERROR' : r.outcome === 'SENT' ? 'SENT' : ''}`;
+    if (r.email) { p.textContent = `Subject: ${r.email.subject}\n\n${r.email.text}`; p.hidden = false; }
+  } catch (e) { msg.textContent = e.message; msg.className = 'msg ERROR'; }
+  finally { busy(false); }
+}
+
+// ---------- account form ----------
+$('f-days').append(...[1, 2, 3, 4, 5, 6, 0].map((d) => {
+  const l = el('label'); const c = el('input'); c.type = 'checkbox'; c.value = d; l.append(c, DAY_NAMES[d]); return l;
+}));
+
+const kind = () => preset(form.preset)?.kind ?? 'smtp';
+
+function renderProviders() {
+  $('providerGrid').replaceChildren(...state.config.providers.map((p) => {
+    const b = el('button');
+    b.type = 'button';
+    b.className = p.id === form.preset ? 'selected' : '';
+    const sub = p.kind === 'smtp' ? (p.host || 'Enter server details') : (state.config.oauth[p.kind] ? 'Sign in — no password' : 'Sign-in not set up yet');
+    b.append(p.name, el('small', sub));
+    b.addEventListener('click', () => { form.userPicked = true; selectProvider(p.id); });
+    return b;
+  }));
+}
+
+function selectProvider(id, { keepServer = false } = {}) {
+  const changedKind = (preset(id)?.kind ?? 'smtp') !== kind();
+  form.preset = id;
+  const p = preset(id);
+  if (changedKind) { form.connection = null; form.connectedEmail = null; }
+  renderProviders();
+  $('providerHint').textContent = p.hint;
+  const k = p.kind;
+  const oauth = k !== 'smtp';
+  $('oauthBox').hidden = !oauth || !state.config.oauth[k];
+  $('oauthMissing').hidden = !oauth || state.config.oauth[k];
+  $('smtpBox').hidden = oauth;
+  if (oauth && !state.config.oauth[k]) {
+    $('oauthMissing').replaceChildren(`${KIND_LABEL[k]} sign-in isn't set up on the server yet (see README → "Sign in with ${KIND_LABEL[k]}"). `,
+      ...(k === 'google' ? [Object.assign(el('button', 'Use Gmail App Password instead', 'link'), { type: 'button', onclick: () => selectProvider('gmail-smtp') })] : []));
+  }
+  if (!oauth && !keepServer) {
+    F('smtpHost').value = p.host || '';
+    F('smtpPort').value = p.port || 465;
+  }
+  $('serverDetails').open = id === 'custom';
+  $('signInBtn').textContent = form.connection || form.connectedEmail ? `Reconnect with ${KIND_LABEL[k] || ''}` : `Sign in with ${KIND_LABEL[k] || ''}`;
+  renderOAuthStatus();
+  F('senderEmail').readOnly = oauth && Boolean(form.connectedEmail);
+}
+
+function renderOAuthStatus() {
+  const s = $('oauthStatus');
+  if (form.connectedEmail) { s.replaceChildren(el('span', '✓ ', 'ok'), `Connected as ${form.connectedEmail}`); }
+  else s.textContent = 'Opens a secure Google/Microsoft window. Only permission to send email is requested.';
+}
+
+let detectTimer;
+F('senderEmail').addEventListener('input', () => {
+  clearTimeout(detectTimer);
+  const email = F('senderEmail').value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || form.userPicked || form.id) return;
+  detectTimer = setTimeout(async () => {
+    try {
+      const { provider } = await post('/api/accounts', { op: 'detect', email });
+      if (form.userPicked || F('senderEmail').value.trim() !== email) return;
+      selectProvider(provider);
+      $('detectHint').textContent = provider === 'custom' ? 'Provider not recognised. Pick one below or use “Other (SMTP)”.' : `Detected ${preset(provider).name} from your domain's mail servers.`;
+    } catch { /* detection is optional */ }
+  }, 500);
+});
+
+function signIn() {
+  const k = kind();
+  const hint = F('senderEmail').value.trim();
+  const popup = window.open(`/api/oauth?provider=${k}${hint ? `&hint=${encodeURIComponent(hint)}` : ''}`, 'oauth', 'width=520,height=700');
+  if (!popup) formMsg('Your browser blocked the sign-in window. Allow pop-ups for this site and try again.', 'ERROR');
+  else formMsg(`Waiting for ${KIND_LABEL[k]} sign-in…`);
+}
+$('signInBtn').addEventListener('click', signIn);
+
+window.addEventListener('message', (e) => {
+  if (e.origin !== location.origin || e.data?.type !== 'oauth-result') return;
+  if (!e.data.ok) return formMsg(e.data.error, 'ERROR');
+  if (e.data.provider !== kind()) return formMsg('That sign-in was for a different provider; please try again.', 'ERROR');
+  form.connection = e.data.connection;
+  form.connectedEmail = e.data.email;
+  F('senderEmail').value = e.data.email;
+  if (!F('senderName').value) F('senderName').value = e.data.name || '';
+  selectProvider(form.preset);
+  formMsg([el('span', '✓ ', 'ok'), `Signed in as ${e.data.email}. Fill in the recipient and sheet, then Save.`]);
+});
+
+function openForm(a) {
+  form = { id: a?.id ?? null, preset: a ? presetFor(a) : 'hostinger', connection: null, connectedEmail: a && a.provider !== 'smtp' ? a.senderEmail : null, userPicked: Boolean(a) };
+  $('formTitle').textContent = a ? `Edit ${a.label}` : 'Connect mail account';
+  $('deleteBtn').hidden = !a;
+  const v = a || { senderName: '', senderEmail: '', smtpHost: '', smtpPort: 465, smtpUser: '', hrEmail: '', hrName: '',
+    sheetId: '', sheetName: '', colDate: '', colTasks: '', colStatus: '', colNotes: '', dateOrder: 'DMY', label: '',
+    enabled: true, workingDays: [1, 2, 3, 4, 5, 6] };
+  for (const k of ['senderName', 'senderEmail', 'hrEmail', 'hrName', 'sheetName', 'colDate', 'colTasks', 'colStatus', 'colNotes', 'dateOrder']) F(k).value = v[k] ?? '';
+  F('smtpHost').value = v.smtpHost || ''; F('smtpPort').value = v.smtpPort || 465;
+  F('smtpUser').value = v.smtpUser === v.senderEmail ? '' : v.smtpUser;
+  F('label').value = v.label === v.senderEmail ? '' : v.label;
+  F('sheetId').value = v.sheetId ? `https://docs.google.com/spreadsheets/d/${v.sheetId}/edit` : '';
+  F('enabled').checked = v.enabled;
+  F('password').value = '';
+  F('password').placeholder = a && a.provider === 'smtp' ? 'Leave blank to keep the saved password' : '';
+  $('f-days').querySelectorAll('input').forEach((c) => (c.checked = v.workingDays.includes(Number(c.value))));
+  $('detectHint').textContent = '';
+  selectProvider(form.preset, { keepServer: Boolean(a) });
+  const sa = state.config.serviceAccountEmail;
+  $('shareHint').replaceChildren(...(sa
+    ? ['Share the sheet (Share → Viewer) with ', el('code', sa), '.']
+    : [el('span', 'GOOGLE_SERVICE_ACCOUNT_JSON is not configured on the server yet.', 'bad')]));
+  formMsg('');
+  $('formCard').hidden = false;
+  $('formCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+function formData() {
+  return {
+    provider: kind(),
+    senderName: F('senderName').value, senderEmail: F('senderEmail').value, smtpHost: F('smtpHost').value,
+    smtpPort: Number(F('smtpPort').value), smtpUser: F('smtpUser').value, hrEmail: F('hrEmail').value, hrName: F('hrName').value,
+    sheetId: F('sheetId').value, sheetName: F('sheetName').value, colDate: F('colDate').value, colTasks: F('colTasks').value,
+    colStatus: F('colStatus').value, colNotes: F('colNotes').value, dateOrder: F('dateOrder').value, label: F('label').value,
+    enabled: F('enabled').checked,
+    workingDays: [...$('f-days').querySelectorAll('input:checked')].map((c) => Number(c.value)),
+  };
+}
+const formBody = (op, extra = {}) => ({
+  op, ...(form.id ? { id: form.id } : {}), account: formData(),
+  ...(kind() === 'smtp' ? { password: F('password').value } : form.connection ? { connection: form.connection } : {}),
+  ...extra,
+});
+function formMsg(nodes, cls = '') { $('formMsg').replaceChildren(...[].concat(nodes)); $('formMsg').className = `msg ${cls}`; }
+
+async function test(sendTest) {
+  busy(true); formMsg('Testing… (can take ~15 seconds)');
+  try {
+    const r = await post('/api/accounts', formBody('test', { sendTest }));
+    formMsg(['mail', 'sheet'].map((k) => {
+      const line = el('div'); line.append(el('span', r[k].ok ? '✓ ' : '✗ ', r[k].ok ? 'ok' : 'bad'), `${k === 'mail' ? 'Mailbox' : 'Sheet'}: ${r[k].message}`); return line;
+    }));
+  } catch (e) { formMsg(e.message, 'ERROR'); }
+  finally { busy(false); }
+}
+$('testBtn').addEventListener('click', () => test(false));
+$('testSendBtn').addEventListener('click', () => test(true));
+$('cancelBtn').addEventListener('click', () => { $('formCard').hidden = true; });
+
+$('accountForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  busy(true); formMsg('Saving…');
+  try {
+    await post('/api/accounts', formBody('save'));
+    $('formCard').hidden = true;
+    await load();
+  } catch (err) { formMsg(err.message, 'ERROR'); }
+  finally { busy(false); }
+});
+
+$('deleteBtn').addEventListener('click', async () => {
+  const a = state.accounts.find((x) => x.id === form.id);
+  if (!a || !confirm(`Remove ${a.label}? Its stored credentials and history will be deleted.`)) return;
+  busy(true);
+  try { await post('/api/accounts', { op: 'delete', id: a.id }); $('formCard').hidden = true; await load(); }
+  catch (err) { formMsg(err.message, 'ERROR'); }
+  finally { busy(false); }
+});
+
+// ---------- auth ----------
+$('addBtn').addEventListener('click', () => openForm(null));
+$('logout').addEventListener('click', async () => { await fetch('/api/login', { method: 'DELETE' }); showLogin(); });
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); $('loginError').textContent = '';
+  try { await post('/api/login', { password: $('password').value }); $('password').value = ''; await load(); }
+  catch (err) { $('loginError').textContent = err.message; }
+});
+
+load().catch((e) => { if (e.message !== 'Please sign in') { $('fatal').textContent = e.message; $('fatal').hidden = false; } });
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Never upload secrets or local files to Vercel
+.env
+.env*.local
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!vercel.json
+node_modules
+tests
+scripts
